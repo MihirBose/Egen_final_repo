@@ -1,19 +1,7 @@
-# import requests
-
-# #response = requests.get("api.openweathermap.org/data/2.5/weather?q=Delhi&appid=523a55d456ef8408f644d6e92977fea4")
-
-# #response = requests.get("https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/Springfield,IL/2021-07-28?unitGroup=us&key=AHBS12DVFHFFSHF764DGDB")
-
-# response = requests.get("https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/buffalo/today?unitGroup=us&key=5L93K2E42ABNWMGNHSZ83PCRX&include=hours%2Ccurrent")
-# resp = response.json()
-# #print (type(resp))
-# print (resp['currentConditions'])
-# #print(response.json())
-
 from requests import Session
 import requests
 import os
-from os import environ
+#from os import environ
 from time import sleep
 import logging
 from concurrent import futures
@@ -22,14 +10,16 @@ from google.cloud.pubsub_v1.publisher.futures import Future
 from google.cloud import secretmanager
 
 
-guardian_url = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/buffalo/today"
-os.environ["GOOGLE_CLOUD_PROJECT"] = "egen-project-1"
+web_url = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/buffalo/today"
+os.environ["GOOGLE_CLOUD_PROJECT"] = "final-project-egen"
 
 class PublishToPubsub:
     def __init__(self):
-        self.project_id = "egen-project-1"
-        self.topic_id = "guardian_stream"
-        self.secret_id = "api-key"
+        self.project_id = "final-project-egen"
+        self.topic_id = "weather_stream"
+        self.unitGroup = "unitGroup"
+        self.key = "key"
+        self.include = "include"
         self.publisher_client = PublisherClient()
         self.topic_path = self.publisher_client.topic_path(self.project_id, self.topic_id)
         self.publish_futures = []
@@ -39,21 +29,31 @@ class PublishToPubsub:
         client = secretmanager.SecretManagerServiceClient()
 
         # Build the resource name of the secret version.
-        name = f"projects/{self.project_id}/secrets/{self.secret_id}/versions/{version_id}"
+        unitGroup = f"projects/{self.project_id}/secrets/{self.unitGroup}/versions/{version_id}"
+        key = f"projects/{self.project_id}/secrets/{self.key}/versions/{version_id}"
+        include = f"projects/{self.project_id}/secrets/{self.include}/versions/{version_id}"
+
 
         # Access the secret version.
-        response = client.access_secret_version(name=name)
+        unitGroup_val = client.access_secret_version(name=unitGroup)
+        key_val = client.access_secret_version(name=key)
+        include_val = client.access_secret_version(name=include)
 
         # Return the decoded payload.
-        return response.payload.data.decode('UTF-8')
+        return (unitGroup_val.payload.data.decode('UTF-8'), 
+        key.payload.data.decode('UTF-8'), include.payload.data.decode('UTF-8'))
 
-    def get_guardian_data(self) -> str:
+    def get_weather_data(self) -> str:
+
+        unitGroup, key, include = self.access_secret_version()
 
         params = {
-            self.secret_id : self.access_secret_version()
+            self.unitGroup : unitGroup,
+            self.key : key,
+            self.include : include
         }
         ses = Session()
-        res = ses.get(guardian_url, params=params, stream=True)
+        res = ses.get(web_url, params=params, stream=True)
 
         if 200 <= res.status_code <= 400:
             logging.info(f"Response - {res.status_code}:{res.text}")
@@ -86,6 +86,6 @@ if __name__ == "__main__":
 
     print (f"hello!!!")
     svc = PublishToPubsub()
-    message = svc.get_guardian_data()
+    message = svc.get_weather_data()
     svc.publish_message_to_topic(message)
     sleep(5)
