@@ -35,13 +35,12 @@ class PublishToPubsub:
 
 
         # Access the secret version.
-        unitGroup_val = client.access_secret_version(name=unitGroup)
-        key_val = client.access_secret_version(name=key)
-        include_val = client.access_secret_version(name=include)
+        unitGroup_val = client.access_secret_version(name=unitGroup).payload.data.decode('UTF-8')
+        key_val = client.access_secret_version(name=key).payload.data.decode('UTF-8')
+        include_val = client.access_secret_version(name=include).payload.data.decode('UTF-8')
 
         # Return the decoded payload.
-        return (unitGroup_val.payload.data.decode('UTF-8'), 
-        key.payload.data.decode('UTF-8'), include.payload.data.decode('UTF-8'))
+        return (unitGroup_val, key_val, include_val)
 
     def get_weather_data(self) -> str:
 
