@@ -13,7 +13,7 @@
 from requests import Session
 import requests
 import os
-#from os import environ
+from os import environ
 from time import sleep
 import logging
 from concurrent import futures
