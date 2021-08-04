@@ -11,11 +11,11 @@ from google.cloud import secretmanager
 
 
 web_url = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/buffalo/today"
-os.environ["GOOGLE_CLOUD_PROJECT"] = "final-project-egen"
+os.environ["GOOGLE_CLOUD_PROJECT"] = "final-project-egen-321822"
 
 class PublishToPubsub:
     def __init__(self):
-        self.project_id = "final-project-egen"
+        self.project_id = "final-project-egen-321822"
         self.topic_id = "weather_stream"
         self.unitGroup = "unitGroup"
         self.key = "key"
